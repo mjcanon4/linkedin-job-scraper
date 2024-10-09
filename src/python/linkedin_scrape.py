@@ -1,37 +1,33 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+import requests
 from bs4 import BeautifulSoup
-import time
+import random
+import pandas as pd
 
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-# soup = BeautifulSoup(html_content, 'html.parser')
+title = 'Data Engineer'
+location = 'Houston'
+start = 0
 
-username = 'michaeljamescanon@gmail.com'
-password = 'Purple104'
+list_url = f"https:www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={title}&location={location}&start={start}"
 
-driver.get('https://www.linkedin.com/login')
-time.sleep(2)
+response = requests.get(list_url)
 
+list_data = response.text
+list_soup = BeautifulSoup(list_data, "html.parser")
+page_jobs = list_soup.find_all("li")
 
-# Handle login using credentials
-username_field = driver.find_element(By.ID, 'username')
-username_field.send_keys(username)
-password_field = driver.find_element(By.ID, 'password')
-password_field.send_keys(password)
-password_field.send_keys(Keys.RETURN)
-time.sleep(5)
+id_list = []
+# iterate thru to get list of job ids
+for job in page_jobs:
+    base_card_div = job.find("div", {"class": "base-card"})
+    job_id = base_card_div.get("data-entity-urn").split(":")[3]
+    print(job_id)
+    id_list.append(job_id)
 
+job_list = []
+# Loop thru list of job IDs and get each URL
+for job_id in id_list:
+    job_url = f"https:linkedin.com/jobs-guest/jobs/api/JobPosting/{job_id}"
 
-# def find_jobs():
-#     job_listings = soup.find_all('div', class_='job-listing')
-#     for job in job_listings:
-#         title = job.find('h2', class_='job-title').get_text()
-#         company = job.find('span', class_='company').get_text()
-#         location = job.find('span', class_='location').get_text()
-#         print(f"Title: {title}")
-#         print(f"Company: {company}")
-#         print(f"Location: {location}")
-#         print("---")
+    job_response = requests.get(job_url)
+    print(job_response.status_code)
+    job_soup = BeautifulSoup(job_response.text, "html.parser")
