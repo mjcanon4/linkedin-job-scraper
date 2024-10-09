@@ -26,8 +26,49 @@ for job in page_jobs:
 job_list = []
 # Loop thru list of job IDs and get each URL
 for job_id in id_list:
-    job_url = f"https:linkedin.com/jobs-guest/jobs/api/JobPosting/{job_id}"
+    # Construct the URL for each job using the job ID
+    job_url = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}"
 
+    # Send a GET request to the job URL and parse the response
     job_response = requests.get(job_url)
     print(job_response.status_code)
     job_soup = BeautifulSoup(job_response.text, "html.parser")
+
+    # Create a dictionary to store job details
+    job_post = {}
+
+    # Try to extract and store the job title
+    try:
+        job_post["job_title"] = job_soup.find("h2", {
+            "class": "top-card-layout__title font-sans text-lg papabear:text-xl font-bold leading-open "
+                     "text-color-text mb-0 topcard__title"}).text.strip()
+    except:
+        job_post["job_title"] = None
+
+    # Try to extract and store the company name
+    try:
+        job_post["company_name"] = job_soup.find("a", {
+            "class": "topcard__org-name-link topcard__flavor--black-link"}).text.strip()
+    except:
+        job_post["company_name"] = None
+
+    # Try to extract and store the time posted
+    try:
+        job_post["time_posted"] = job_soup.find("span", {
+            "class": "posted-time-ago__text topcard__flavor--metadata"}).text.strip()
+    except:
+        job_post["time_posted"] = None
+
+    # Try to extract and store the number of applicants
+    try:
+        job_post["num_applicants"] = job_soup.find("span", {
+            "class": "num-applicants__caption topcard__flavor--metadata topcard__flavor--bullet"}).text.strip()
+    except:
+        job_post["num_applicants"] = None
+
+    # Append the job details to the job_list
+    job_list.append(job_post)
+
+# Create a pandas DataFrame using the list of job dictionaries 'job_list'
+jobs_df = pd.DataFrame(job_list)
+jobs_df
